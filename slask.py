@@ -5,16 +5,17 @@ import os
 import re
 import sys
 import traceback
-
+from config import config
 from flask import Flask, request
 app = Flask(__name__)
 
 curdir = os.path.dirname(os.path.abspath(__file__))
 os.chdir(curdir)
 
-from config import config
 
 hooks = {}
+
+
 def init_plugins():
     for plugin in glob('plugins/[!_]*.py'):
         print "plugin: %s" % plugin
@@ -32,8 +33,8 @@ def init_plugins():
                 hooks.setdefault('help', {})[modname] = firstline
                 hooks.setdefault('extendedhelp', {})[modname] = mod.__doc__
 
-        #bare except, because the modules could raise any number of errors
-        #on import, and we want them not to kill our server
+        # bare except, because the modules could raise any number of errors
+        # on import, and we want them not to kill our server
         except:
             print "import failed on module %s, module not loaded" % plugin
             print "%s" % sys.exc_info()[0]
@@ -41,13 +42,16 @@ def init_plugins():
 
 init_plugins()
 
+
 def run_hook(hook, data, server):
     responses = []
     for hook in hooks.get(hook, []):
         h = hook(data, server)
-        if h: responses.append(h)
+        if h:
+            responses.append(h)
 
     return responses
+
 
 @app.route("/", methods=['POST'])
 def main():
@@ -60,7 +64,8 @@ def main():
         return ""
 
     text = "\n".join(run_hook("message", request.form, {"config": config, "hooks": hooks}))
-    if not text: return ""
+    if not text:
+        return ""
 
     response = {
         "text": text,
@@ -69,6 +74,11 @@ def main():
         "parse": "full",
     }
     return json.dumps(response)
+
+
+@app.route("/ping", methods=['GET'])
+def ping_me():
+    return "pong"
 
 if __name__ == "__main__":
     app.run(debug=True)
