@@ -1,1 +1,1 @@
-web: gunicorn slask:app
+web: newrelic-admin run-program gunicorn slask:app
